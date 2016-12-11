@@ -317,17 +317,20 @@ void iplc_sim_push_pipeline_stage()
     /* 2. Check for BRANCH and correct/incorrect Branch Prediction */
     if (pipeline[DECODE].itype == BRANCH) {
         int branch_taken = 0;
-        if(pipeline[FETCH].instruction_address > (pipeline[DECODE].instruction_address + 0x00000004) ||
-            pipeline[FETCH].instruction_address < (pipeline[DECODE].instruction_address + 0x00000004)){
+        if(pipeline[FETCH].instruction_address != (pipeline[DECODE].instruction_address + 0x00000004){
             branch_taken += 1;
             if(branch_predict_taken == 0){
                 //Insert NOP
                 pipeline_cycles += 10;
+            }else{
+                correct_branch_predictions++;
             }
         }else{
             if(branch_predict_taken == 1){
                 //Insert NOP
                 pipeline_cycles +=10;
+            }else{
+                correct_branch_predictions++;
             }
         }
     }
@@ -337,14 +340,26 @@ void iplc_sim_push_pipeline_stage()
      */
     if (pipeline[MEM].itype == LW) {
         int inserted_nop = 0;
+        data_hit = iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address);
+        if(data_hit){
+            printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
+        }else{
+            printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
+        }
         if(pipeline[MEM].stage.lw.dest_reg == pipeline[ALU].instruction_address){
             inserted_nop +=1;
-
+            if(!data_hit){  //if data miss and insert NOP then increment cycles by 9
+                pipeline_cycles += 9;
+            }
+            else{
+                pipeline_cycles += 10;
+            }
         }
     }
 
     /* 4. Check for SW mem acess and data miss .. add delay cycles if needed */
     if (pipeline[MEM].itype == SW) {
+
     }
 
     /* 5. Increment pipe_cycles 1 cycle for normal processing */
