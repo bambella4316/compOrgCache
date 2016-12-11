@@ -356,6 +356,7 @@ void iplc_sim_push_pipeline_stage()
                 pipeline_cycles += 10;
             }
         }
+        iplc_sim_dump_pipeline();
     }
 
     /* 4. Check for SW mem access and data miss .. add delay cycles if needed */
@@ -367,12 +368,13 @@ void iplc_sim_push_pipeline_stage()
             printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.sw.data_address);
             pipeline_cycles += 10;
         }
+        iplc_sim_dump_pipeline();
     }
 
     /* 5. Increment pipe_cycles 1 cycle for normal processing */
     pipeline_cycles++;
     /* 6. push stages thru MEM->WB, ALU->MEM, DECODE->ALU, FETCH->ALU */
-    for(i = 0; i < MAX_STAGES; i++){
+    for(i = 0; i < MAX_STAGES-1; i++){
         pipeline[i+1] = pipeline[i];
     }
     // 7. This is a give'me -- Reset the FETCH stage to NOP via bezero */
@@ -401,12 +403,12 @@ void iplc_sim_process_pipeline_lw(int dest_reg, int base_reg, unsigned int data_
 {
     iplc_sim_push_pipeline_stage();
 
-    pipeline[FETCH].itype = LW;
-    pipeline[FETCH].instruction_address = instruction_address;
+    pipeline[MEM].itype = LW;
+    pipeline[MEM].instruction_address = instruction_address;
 
-    pipeline[FETCH].stage.lw.dest_reg = dest_reg;
-    pipeline[FETCH].stage.lw.base_reg = base_reg;
-    pipeline[FETCH].stage.lw.data_address = data_address;
+    pipeline[MEM].stage.lw.dest_reg = dest_reg;
+    pipeline[MEM].stage.lw.base_reg = base_reg;
+    pipeline[MEM].stage.lw.data_address = data_address;
 
 }
 
@@ -414,23 +416,23 @@ void iplc_sim_process_pipeline_sw(int src_reg, int base_reg, unsigned int data_a
 {
     iplc_sim_push_pipeline_stage();
 
-    pipeline[FETCH].itype = SW;
-    pipeline[FETCH].instruction_address = instruction_address;
+    pipeline[MEM].itype = SW;
+    pipeline[MEM].instruction_address = instruction_address;
 
-    pipeline[FETCH].stage.sw.src_reg = src_reg;
-    pipeline[FETCH].stage.sw.base_reg = base_reg;
-    pipeline[FETCH].stage.sw.data_address = data_address;
+    pipeline[MEM].stage.sw.src_reg = src_reg;
+    pipeline[MEM].stage.sw.base_reg = base_reg;
+    pipeline[MEM].stage.sw.data_address = data_address;
 }
 
 void iplc_sim_process_pipeline_branch(int reg1, int reg2)
 {
     iplc_sim_push_pipeline_stage();
 
-    pipeline[FETCH].itype = BRANCH;
-    pipeline[FETCH].instruction_address = instruction_address;
+    pipeline[DECODE].itype = BRANCH;
+    pipeline[DECODE].instruction_address = instruction_address;
 
-    pipeline[FETCH].stage.branch.reg1 = reg1;
-    pipeline[FETCH].stage.branch.reg2 = reg2;
+    pipeline[DECODE].stage.branch.reg1 = reg1;
+    pipeline[DECODE].stage.branch.reg2 = reg2;
 }
 
 void iplc_sim_process_pipeline_jump(char *instruction)
